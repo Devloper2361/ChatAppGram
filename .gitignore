@@ -13,3 +13,5 @@ coverage/
 *.db-shm
 
 /src/generated/prisma
+dev.db
+prisma/dev.db
