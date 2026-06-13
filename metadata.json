@@ -1,0 +1,11 @@
+{
+  "name": "Chat App",
+  "description": "WhatsApp-style chat application with voice and video calling",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
