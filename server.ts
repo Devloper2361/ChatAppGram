@@ -22,7 +22,7 @@ const io = new SocketIOServer(server, {
   cors: { origin: "*", credentials: true }
 });
 
-const PORT = 3000;
+const PORT = Number(process.env.PORT) || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || "dev-secret-key-for-local-testing";
 
 const prisma = new PrismaClient({
