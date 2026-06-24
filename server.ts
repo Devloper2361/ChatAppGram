@@ -105,9 +105,9 @@ const prisma = new PrismaClient({
 });
 
 prisma.$connect().then(() => {
-  console.log('Connected to Prisma SQLite Database at file:./dev.db');
+  console.log('Connected to Prisma PostgreSQL Database');
 }).catch((e) => {
-  console.error('Failed to connect to Prisma SQLite Database', e);
+  console.error('Failed to connect to Prisma PostgreSQL Database', e);
 });
 
 app.use(helmet({
