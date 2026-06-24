@@ -1,0 +1,154 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String   @id @default(uuid())
+  username      String   @unique
+  email         String   @unique
+  password_hash String
+  avatar_url    String?
+  displayName   String?
+  bio           String?
+  created_at    DateTime @default(now())
+
+  isOnline      Boolean  @default(false)
+  lastSeen      DateTime @default(now())
+
+  wallpaperLight String?
+  wallpaperDark  String?
+  wallpaperBlur  Boolean  @default(false)
+
+  profilePhotoPrivacy String @default("EVERYONE")
+  statusPrivacy       String @default("EVERYONE")
+  lastSeenPrivacy     String @default("EVERYONE")
+  onlineStatusPrivacy String @default("EVERYONE")
+
+  sentMessages     Message[] @relation("SentMessages")
+  receivedMessages Message[] @relation("ReceivedMessages")
+  reactions        MessageReaction[]
+  statuses         Status[]
+  statusViews      StatusView[]
+  statusReactions  StatusReaction[]
+  statusPrivacyExceptions StatusPrivacyException[] @relation("UserExceptions")
+  targetStatusPrivacyExceptions StatusPrivacyException[] @relation("TargetExceptions")
+}
+
+model StatusPrivacyException {
+  id           String @id @default(uuid())
+  userId       String
+  targetUserId String
+  type         String // EXCLUDED, ALLOWED
+
+  user         User   @relation("UserExceptions", fields: [userId], references: [id], onDelete: Cascade)
+  targetUser   User   @relation("TargetExceptions", fields: [targetUserId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, targetUserId, type])
+}
+
+model Status {
+  id        String   @id @default(uuid())
+  userId    String
+  type      String   @default("TEXT") // TEXT, IMAGE, VIDEO, AUDIO
+  content   String?  // Text content or caption
+  mediaUrl  String?  
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  views     StatusView[]
+  reactions StatusReaction[]
+  replies   Message[] @relation("StatusReplies")
+
+  @@index([userId, expiresAt])
+}
+
+model StatusView {
+  id        String   @id @default(uuid())
+  statusId  String
+  viewerId  String
+  viewedAt  DateTime @default(now())
+
+  status    Status   @relation(fields: [statusId], references: [id], onDelete: Cascade)
+  viewer    User     @relation(fields: [viewerId], references: [id], onDelete: Cascade)
+
+  @@unique([statusId, viewerId])
+}
+
+model StatusReaction {
+  id        String   @id @default(uuid())
+  statusId  String
+  viewerId  String
+  emoji     String
+  createdAt DateTime @default(now())
+
+  status    Status   @relation(fields: [statusId], references: [id], onDelete: Cascade)
+  viewer    User     @relation(fields: [viewerId], references: [id], onDelete: Cascade)
+
+  @@unique([statusId, viewerId, emoji])
+}
+
+model Message {
+  id         String   @id @default(uuid())
+  senderId   String
+  receiverId String
+  content    String   @default("")
+  imageUrl   String?
+  audioUrl   String?
+  audioDuration Int?
+  createdAt  DateTime @default(now())
+  isRead     Boolean  @default(false)
+  replyToId  String?
+  replyToStatusId String?
+  editedAt   DateTime?
+  isDeleted  Boolean  @default(false)
+  deletedAt  DateTime?
+  isForwarded Boolean @default(false)
+  deliveredAt DateTime?
+  readAt      DateTime?
+
+  sender     User     @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver   User     @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+  replyTo    Message?  @relation("MessageReplies", fields: [replyToId], references: [id])
+  replyToStatus Status? @relation("StatusReplies", fields: [replyToStatusId], references: [id], onDelete: SetNull)
+  replies    Message[] @relation("MessageReplies")
+  reactions  MessageReaction[]
+  pinnedIn   ChatSetting[] @relation("PinnedMessage")
+
+  @@index([senderId, receiverId])
+  @@index([createdAt])
+}
+
+model ChatSetting {
+  id              String   @id @default(uuid())
+  user1Id         String
+  user2Id         String
+  pinnedMessageId String?
+  
+  pinnedMessage   Message? @relation("PinnedMessage", fields: [pinnedMessageId], references: [id], onDelete: SetNull)
+
+  @@unique([user1Id, user2Id])
+}
+
+model MessageReaction {
+  id        String   @id @default(uuid())
+  messageId String
+  userId    String
+  emoji     String
+  createdAt DateTime @default(now())
+
+  message   Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId, emoji])
+}
